@@ -16,6 +16,7 @@
 -(void)exitRoom;
 -(void)composeMessage;
 -(void)postLeaveRequest;
+-(void)incommingMessage:(NSNotification *)noti;
 
 @end
 
@@ -44,15 +45,14 @@
         
         
         messages = [NSMutableArray array];
-        for (int i = 0; i < 7; i++) {
-            
-            NSString * men = [NSString stringWithFormat:@"Message %d", i];
-            Message * message = [[Message alloc] initWithText:men 
-                                                       author:@"Author" 
-                                                         date:[NSDate date] 
-                                                   ownMessage:(i % 2)];
-            [messages addObject:message];
-        }
+        
+        
+        //NSnotification 
+        [[NSNotificationCenter defaultCenter] addObserver:self 
+                                                 selector:@selector(incommingMessage:) 
+                                                     name:@"message" 
+                                                   object:nil];
+        
     }
     return self;
 }
@@ -68,9 +68,9 @@
 
 #pragma mark - Private Methods
 
-
 - (void)postLeaveRequest
 {
+    
 	MBProgressHUD* hud = [MBProgressHUD showHUDAddedTo:self.navigationController.view animated:YES];
 	hud.labelText = NSLocalizedString(@"Signing Out", nil);
     
@@ -92,27 +92,24 @@
                  
              } else {
                  
-                 [self userDidLeave];
+                 [self.navigationController popViewControllerAnimated:YES];
              }
      }];
     
-	[request setFailedBlock:^
-     {
-         if ([self isViewLoaded])
-         {
-             [MBProgressHUD hideHUDForView:self.navigationController.view animated:YES];
-             ShowErrorAlert([[request error] localizedDescription]);
-         }
+	[request setFailedBlock:^ {
+        
+        [MBProgressHUD hideHUDForView:self.navigationController.view animated:YES];
+        puts("error");
+        
      }];
     
 	[request startAsynchronous];
+     
 }
 
 -(void)exitRoom {
     
     [self postLeaveRequest];
-    
-    [self.navigationController popViewControllerAnimated:YES];
 }
 
 -(void)composeMessage {
@@ -144,6 +141,23 @@
                           withRowAnimation:UITableViewRowAnimationTop];
 }
 
+
+-(void)incommingMessage:(NSNotification *)noti {
+    
+    
+    NSString* alertValue = [[noti.userInfo valueForKey:@"aps"] valueForKey:@"alert"];
+    NSArray * messageData = [alertValue componentsSeparatedByString:@": "];
+    NSString * name = [messageData objectAtIndex:0];
+    NSString * messageText = [messageData objectAtIndex:1];
+    
+    Message * message = [[Message alloc] initWithText:messageText 
+                                               author:name 
+                                                 date:[NSDate date] 
+                                           ownMessage:NO];
+    
+    [self messageAdded:message];
+}
+
 #pragma mark - TableViewDelegate
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -173,6 +187,11 @@
     }
     
     return cell;
+}
+
+-(void)dealloc {
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"message" object:nil];
 }
 
 

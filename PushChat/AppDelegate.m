@@ -31,9 +31,31 @@
     [self.window makeKeyAndVisible];
     
     [[UIApplication sharedApplication] registerForRemoteNotificationTypes:
-     (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert)];
+     (UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert)];
+    
+    
+    /*
+    if (launchOptions) {
+        
+		NSDictionary* dictionary = [launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey];
+        
+		if (dictionary) {
+            
+			NSLog(@"Launched from push notification: %@", dictionary);
+			//[self addMessageFromRemoteNotification:dictionary updateUI:NO];
+		}
+	}
+     */
     
     return YES;
+}
+
+-(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo {
+    
+    NSLog(@"Received notification: %@", userInfo);
+	//[self addMessageFromRemoteNotification:userInfo updateUI:YES];
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"message" object:nil userInfo:userInfo];
 }
 
 - (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken

@@ -8,7 +8,14 @@
 
 #import "MessageViewController.h"
 #import <QuartzCore/QuartzCore.h>
+#import "MBProgressHUD.h"
+#import "ASIFormDataRequest.h"
 
+@interface MessageViewController()
+
+-(void)postMessageRequest;
+
+@end
 
 
 @implementation MessageViewController
@@ -39,6 +46,56 @@
     [textInput.layer setMasksToBounds:YES];
 }
 
+#pragma mark - Private methods 
+
+-(void)postMessageRequest {
+    
+    [textInput resignFirstResponder];
+    
+	MBProgressHUD * hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+	hud.labelText = @"Sending";
+    
+	NSString* text = textInput.text;
+    
+	NSURL* url = [NSURL URLWithString:ServerApiURL];
+	__unsafe_unretained ASIFormDataRequest* request = [ASIFormDataRequest requestWithURL:url];
+	[request setDelegate:self];
+    
+	[request setPostValue:@"message" forKey:@"cmd"];
+	[request setPostValue:[[Model sharedModel] udid] forKey:@"udid"];
+	[request setPostValue:text forKey:@"text"];
+    
+	[request setCompletionBlock:^ {
+        
+             [MBProgressHUD hideHUDForView:self.view animated:YES];
+             
+             if ([request responseStatusCode] != 200) {
+                 puts("error");
+             } else {
+                 
+                 //User did compose
+                 Message * message = [[Message alloc] initWithText:textInput.text 
+                                                            author:@"Me"
+                                                              date:[NSDate date] 
+                                                        ownMessage:YES];
+                 [_delegate messageAdded:message];
+                 
+                 [self dismissModalViewControllerAnimated:YES];
+             }
+        
+     }];
+    
+	[request setFailedBlock:^ {
+         
+        [MBProgressHUD hideHUDForView:self.view animated:YES];
+         puts("error");
+         
+     }];
+    
+	[request startAsynchronous];
+    
+}
+
 #pragma mark - IBActions
 
 -(void)cancel:(id)sender {
@@ -48,13 +105,7 @@
 
 -(void)send:(id)sender {
     
-    Message * message = [[Message alloc] initWithText:textInput.text 
-                                               author:@"Me"
-                                                 date:[NSDate date] 
-                                           ownMessage:YES];
-    [_delegate messageAdded:message];
-    
-    [self dismissModalViewControllerAnimated:YES];
+    [self postMessageRequest];
 }
 
 

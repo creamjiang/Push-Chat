@@ -60,7 +60,7 @@
     
     [request setCompletionBlock:^ {
          
-         [MBProgressHUD hideHUDForView:self.view animated:YES];
+        [MBProgressHUD hideHUDForView:self.view animated:YES];
          
          if ([request responseStatusCode] != 200) {
              
